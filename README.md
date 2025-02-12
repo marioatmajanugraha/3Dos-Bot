@@ -26,15 +26,21 @@ http://user:pass@host:port
 node index.js
 ```
 🛠️ Konfigurasi
-Api3D.txt → Simpan local secret code untuk request API.
-proxy.txt → Daftar proxy yang digunakan.
-interval → Delay otomatis antar request.
+Api3D.txt → 
+Simpan local secret code untuk request API.
+proxy.txt → 
+Daftar proxy yang digunakan.
+interval → 
+Delay otomatis antar request.
 
 ❗ Disclaimer
 Gunakan dengan bijak! Jangan sampai terkena limit IP.
 Developer tidak bertanggung jawab atas penyalahgunaan script ini.
 
-📢 Join Channel & Diskusi
+📢 
+Join Channel 
+& 
+Diskusi
 
 Channel Telegram : 
 https://t.me/airdroplocked
