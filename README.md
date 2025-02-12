@@ -8,6 +8,9 @@
 - 🛡️ Menggunakan **SOCKS5 & HTTP proxy**.
 - 🔧 Mudah digunakan & dikonfigurasi.
 
+## ✨ New Update 
+- 🔄 Auto Switching Proxy ( IF ERROR )
+
 ## 📌 Cara Install & Jalankan
 ### 1️⃣ Clone Repository
 ```
