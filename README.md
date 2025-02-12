@@ -11,8 +11,8 @@ Airdrop 888 adalah script otomatis untuk melakukan **claim & refresh points** de
 ## 📌 Cara Install & Jalankan
 ### 1️⃣ Clone Repository
 ```
-git clone https://github.com/username/Airdrop888.git
-cd Airdrop888
+git clone https://github.com/marioatmajanugraha/3Dos-Bot.git
+cd 3Dos-Bot
 npm install
 ```
 2️⃣ Siapkan File Proxy
