@@ -1,6 +1,6 @@
-# 🚀 Airdrop 888 - Auto Claim & Points Refresher
+# 🚀 Airdrop 888 (3Dos-Bot) - Auto Claim & Points Refresher
 
-Airdrop 888 adalah script otomatis untuk melakukan **claim & refresh points** dengan proxy berbeda di setiap ping, menghindari limit IP dan meningkatkan keberhasilan!
+🚀 Airdrop 888 (3Dos-Bot) adalah script otomatis untuk melakukan **claim & refresh points** dengan proxy berbeda di setiap ping, menghindari limit IP dan meningkatkan keberhasilan!
 
 ## ✨ Fitur Utama
 - 🔄 Menggunakan **proxy berbeda** setiap kali request untuk menghindari limit.
