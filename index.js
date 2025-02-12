@@ -1,7 +1,7 @@
 const cfonts = require('cfonts');
-const chalk = require('chalk'); // Pastikan menggunakan chalk@4.x
+const chalk = require('chalk');
 const axios = require('axios');
-const HttpsProxyAgent = require('https-proxy-agent');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const fs = require('fs');
 const readline = require('readline');
@@ -35,38 +35,45 @@ const getProxies = () => {
     try {
         const proxyFile = fs.readFileSync('proxy.txt', 'utf8').trim();
         if (proxyFile) {
-            return proxyFile.split('\n').map(line => line.trim()).filter(line => line);
+            const proxies = proxyFile.split('\n').map(line => line.trim()).filter(line => line);
+            if (proxies.length > 0) return proxies;
+            console.log(chalk.yellow('⚠️  Proxy file is empty. Continuing without proxy.'));
         }
     } catch (err) {
-        console.log(chalk.yellow('⚠️  No proxy file found. Continuing without proxy.'));
+        console.log(chalk.red('❌  No proxy file found. Please provide a valid proxy.txt.'));
+        process.exit(1);
     }
     return [];
 };
 
-// Function to get a random proxy agent
-const getRandomProxyAgent = (proxies) => {
-    if (proxies.length > 0) {
-        const randomProxy = proxies[Math.floor(Math.random() * proxies.length)];
-        if (randomProxy.startsWith('http://')) {
-            console.log(chalk.yellow(`ℹ️  Using HTTP proxy: ${randomProxy}`));
-            return new HttpsProxyAgent(randomProxy);
-        } else if (randomProxy.startsWith('socks5://')) {
-            console.log(chalk.yellow(`ℹ️  Using SOCKS5 proxy: ${randomProxy}`));
-            return new SocksProxyAgent(randomProxy);
-        } else {
-            console.log(chalk.yellow('⚠️  Unsupported proxy format. Continuing without proxy.'));
-        }
+// Function to get the next proxy in the list (round-robin method)
+let proxyIndex = 0;
+const getNextProxy = (proxies) => {
+    if (proxies.length === 0) return null;
+    const proxy = proxies[proxyIndex % proxies.length];
+    proxyIndex++;
+    return proxy;
+};
+
+// Function to create a proxy agent
+const getProxyAgent = (proxy) => {
+    if (proxy.startsWith('http://') || proxy.startsWith('https://')) {
+        console.log(chalk.yellow(`ℹ️  Using HTTP proxy: ${proxy}`));
+        return new HttpsProxyAgent(proxy);
+    } else if (proxy.startsWith('socks5://')) {
+        console.log(chalk.yellow(`ℹ️  Using SOCKS5 proxy: ${proxy}`));
+        return new SocksProxyAgent(proxy);
+    } else {
+        console.log(chalk.red(`❌  Invalid proxy format: ${proxy}`));
+        return null;
     }
-    return null;
 };
 
 // Function to read Local Secret Code from Api3D.txt
 const getLocalSecretCode = () => {
     try {
         const secretCode = fs.readFileSync('Api3D.txt', 'utf8').trim();
-        if (!secretCode) {
-            throw new Error('Local Secret Code is empty in Api3D.txt');
-        }
+        if (!secretCode) throw new Error('Local Secret Code is empty in Api3D.txt');
         return secretCode;
     } catch (err) {
         console.log(chalk.red(`❌  Error reading Api3D.txt: ${err.message}`));
@@ -91,11 +98,22 @@ const pingAPI = async (proxyAgent) => {
 
     try {
         const response = await axios.get(url, config);
-        const { status, data } = response.data;
-        const totalPoints = data.total_points;
-        console.log(chalk.green(`✅  Response: total_points: "${totalPoints}", status: "${status}"`));
+        
+        // Pastikan mengambil data dengan benar
+        if (response.data && response.data.data && response.data.data.total_points !== undefined) {
+            const totalPoints = response.data.data.total_points;
+            const status = response.data.status;
+            console.log(chalk.green(`✅  Response: total_points: "${totalPoints}", status: "${status}"`));
+        } else {
+            console.log(chalk.red('❌  Error: Response format changed or total_points is undefined.'));
+        }
     } catch (error) {
-        console.log(chalk.red(`❌  Error: ${error.message}`));
+        if (error.response && error.response.status === 429) {
+            console.log(chalk.red(`❌  Error: Request failed with status code 429`));
+        } else {
+            console.log(chalk.red(`❌  Error: ${error.message}`));
+        }
+        throw error;
     }
 };
 
@@ -117,12 +135,28 @@ const askProxyUsage = () => {
 // Main function
 const main = async () => {
     const useProxy = await askProxyUsage();
-    const proxies = useProxy ? getProxies() : [];
+    let proxies = useProxy ? getProxies() : [];
+
+    if (useProxy && proxies.length === 0) {
+        console.log(chalk.red('❌  No proxies available. Exiting...'));
+        process.exit(1);
+    }
 
     while (true) {
-        const proxyAgent = getRandomProxyAgent(proxies); // Ambil proxy baru setiap ping
-        await pingAPI(proxyAgent);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay 1 detik
+        try {
+            const proxy = getNextProxy(proxies);
+            const proxyAgent = getProxyAgent(proxy);
+            if (proxyAgent) {
+                await pingAPI(proxyAgent);
+            }
+        } catch (error) {
+            // Jika ada error 429, ganti proxy
+            if (error.response && error.response.status === 429) {
+                console.log(chalk.yellow('🔄  Switching proxy...'));
+            }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Delay 3 detik untuk menghindari error 429
     }
 };
 
