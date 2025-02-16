@@ -1,15 +1,16 @@
-# 🚀 Airdrop 888 (3Dos-Bot) - Auto Claim & Points Refresher
+# 🚀 Airdrop 888 (3Dos-Bot) - Send Ping Infinite 
 
 🚀 Airdrop 888 (3Dos-Bot) adalah script otomatis untuk melakukan **claim & refresh points** dengan proxy berbeda di setiap ping, menghindari limit IP dan meningkatkan keberhasilan!
 
 ## ✨ Fitur Utama
 - 🔄 Menggunakan **proxy berbeda** setiap kali request untuk menghindari limit.
-- ⚡ Auto-refresh points dengan **stabil & cepat**.
+- ⚡ Refresh Points di awal saja!
 - 🛡️ Menggunakan **SOCKS5 & HTTP proxy**.
 - 🔧 Mudah digunakan & dikonfigurasi.
 
 ## ✨ New Update 
 - 🔄 Auto Switching Proxy ( IF ERROR )
+- ⚡ Send Ping Infinite ( tanpa henti ) 
 
 ## 📌 Cara Install & Jalankan
 ### 1️⃣ Clone Repository
