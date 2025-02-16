@@ -11,52 +11,32 @@ cfonts.say('Airdrop 888', {
     font: 'block',
     align: 'center',
     colors: ['green', 'white'],
-    background: 'transparent',
-    letterSpacing: 1,
-    lineHeight: 1,
-    space: true,
-    maxLength: '0',
 });
-
 console.log(chalk.blue('Script coded by - @balveerxyz || Ping 3Dos'));
 
-// Function to get random user agent
+// Get Random User Agent
 const getRandomUserAgent = () => {
     const userAgents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
     ];
     return userAgents[Math.floor(Math.random() * userAgents.length)];
 };
 
-// Function to read proxies from file
-const getProxies = () => {
+// Load Proxies
+const loadProxies = () => {
     try {
-        const proxyFile = fs.readFileSync('proxy.txt', 'utf8').trim();
-        if (proxyFile) {
-            const proxies = proxyFile.split('\n').map(line => line.trim()).filter(line => line);
-            if (proxies.length > 0) return proxies;
-            console.log(chalk.yellow('⚠️  Proxy file is empty. Continuing without proxy.'));
-        }
-    } catch (err) {
-        console.log(chalk.red('❌  No proxy file found. Please provide a valid proxy.txt.'));
-        process.exit(1);
+        const data = fs.readFileSync('proxy.txt', 'utf8').trim();
+        return data ? data.split('\n').map(line => line.trim()).filter(Boolean) : [];
+    } catch {
+        return [];
     }
-    return [];
 };
 
-// Function to get the next proxy in the list (round-robin method)
-let proxyIndex = 0;
-const getNextProxy = (proxies) => {
-    if (proxies.length === 0) return null;
-    const proxy = proxies[proxyIndex % proxies.length];
-    proxyIndex++;
-    return proxy;
-};
-
-// Function to create a proxy agent
+// Get Proxy Agent
 const getProxyAgent = (proxy) => {
+    if (!proxy) return null;
     if (proxy.startsWith('http://') || proxy.startsWith('https://')) {
         console.log(chalk.yellow(`ℹ️  Using HTTP proxy: ${proxy}`));
         return new HttpsProxyAgent(proxy);
@@ -69,94 +49,82 @@ const getProxyAgent = (proxy) => {
     }
 };
 
-// Function to read Local Secret Code from Api3D.txt
+// Get Local Secret Code
 const getLocalSecretCode = () => {
     try {
-        const secretCode = fs.readFileSync('Api3D.txt', 'utf8').trim();
-        if (!secretCode) throw new Error('Local Secret Code is empty in Api3D.txt');
-        return secretCode;
-    } catch (err) {
-        console.log(chalk.red(`❌  Error reading Api3D.txt: ${err.message}`));
+        return fs.readFileSync('Api3D.txt', 'utf8').trim();
+    } catch {
+        console.log(chalk.red('❌  Error: Api3D.txt not found or empty.'));
         process.exit(1);
     }
 };
 
-// Function to ping the API
-const pingAPI = async (proxyAgent) => {
-    const localSecretCode = getLocalSecretCode();
-    const url = `https://api.dashboard.3dos.io/api/refresh-points/${localSecretCode}`;
-    const userAgent = getRandomUserAgent();
-
-    const config = {
-        headers: {
-            'Connection': 'keep-alive',
-            'Host': 'api.dashboard.3dos.io',
-            'User-Agent': userAgent,
-        },
-        httpsAgent: proxyAgent,
-    };
-
+// Send Ping API
+const sendPing = async (proxyAgent) => {
+    const url = 'https://api.dashboard.3dos.io/api/profile/api/805bf62f0a76433abacf';
     try {
-        const response = await axios.get(url, config);
-        
-        // Pastikan mengambil data dengan benar
-        if (response.data && response.data.data && response.data.data.total_points !== undefined) {
-            const totalPoints = response.data.data.total_points;
-            const status = response.data.status;
-            console.log(chalk.green(`✅  Response: total_points: "${totalPoints}", status: "${status}"`));
+        const response = await axios.post(url, null, {
+            headers: {
+                'User-Agent': getRandomUserAgent(),
+                'Accept': '*/*',
+                'Origin': 'chrome-extension://lpindahibbkakkdjifonckbhopdoaooe',
+            },
+            httpsAgent: proxyAgent,
+        });
+        if (response.data?.status === 'Success') {
+            console.log(chalk.green(`✅  Ping successful: ${response.data.status}`));
         } else {
-            console.log(chalk.red('❌  Error: Response format changed or total_points is undefined.'));
+            console.log(chalk.red('❌  Ping failed.')); 
         }
     } catch (error) {
-        if (error.response && error.response.status === 429) {
-            console.log(chalk.red(`❌  Error: Request failed with status code 429`));
-        } else {
-            console.log(chalk.red(`❌  Error: ${error.message}`));
-        }
-        throw error;
+        console.log(chalk.red(`❌  Ping error: ${error.message}`));
     }
 };
 
-// Function to ask user if they want to use a proxy
-const askProxyUsage = () => {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
+// Refresh Points
+const refreshPoints = async (proxyAgent) => {
+    const localSecretCode = getLocalSecretCode();
+    const url = `https://api.dashboard.3dos.io/api/refresh-points/${localSecretCode}`;
+    try {
+        const response = await axios.get(url, {
+            headers: {
+                'User-Agent': getRandomUserAgent(),
+            },
+            httpsAgent: proxyAgent,
+        });
+        if (response.data?.data?.total_points !== undefined) {
+            console.log(chalk.green(`✅  Total Points: ${response.data.data.total_points}`));
+        } else {
+            console.log(chalk.red('❌  Failed to retrieve total points.'));
+        }
+    } catch (error) {
+        console.log(chalk.red(`❌  Error refreshing points: ${error.message}`));
+    }
+};
 
+// Ask Proxy Usage
+const askProxyUsage = () => {
     return new Promise((resolve) => {
-        rl.question('Mau menggunakan proxy? (y/n): ', (answer) => {
-            rl.close();
+        readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        }).question('Use proxy? (y/n): ', (answer) => {
             resolve(answer.trim().toLowerCase() === 'y');
         });
     });
 };
 
-// Main function
+// Main Function
 const main = async () => {
     const useProxy = await askProxyUsage();
-    let proxies = useProxy ? getProxies() : [];
+    const proxies = useProxy ? loadProxies() : [];
+    const proxy = proxies.length > 0 ? proxies[0] : null;
+    const proxyAgent = getProxyAgent(proxy);
 
-    if (useProxy && proxies.length === 0) {
-        console.log(chalk.red('❌  No proxies available. Exiting...'));
-        process.exit(1);
-    }
-
+    await refreshPoints(proxyAgent);
+    console.log(chalk.blue('🔄  Starting infinite ping loop... Press CTRL + C to stop.'));
     while (true) {
-        try {
-            const proxy = getNextProxy(proxies);
-            const proxyAgent = getProxyAgent(proxy);
-            if (proxyAgent) {
-                await pingAPI(proxyAgent);
-            }
-        } catch (error) {
-            // Jika ada error 429, ganti proxy
-            if (error.response && error.response.status === 429) {
-                console.log(chalk.yellow('🔄  Switching proxy...'));
-            }
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Delay 3 detik untuk menghindari error 429
+        await sendPing(proxyAgent);
     }
 };
 
