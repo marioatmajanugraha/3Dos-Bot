@@ -49,10 +49,13 @@ const getProxyAgent = (proxy) => {
     }
 };
 
-// Get Local Secret Code
-const getLocalSecretCode = () => {
+// Get Local Secret Codes
+const getLocalSecretCodes = () => {
     try {
-        return fs.readFileSync('Api3D.txt', 'utf8').trim();
+        const data = fs.readFileSync('Api3D.txt', 'utf8').trim();
+        const secrets = data.split('\n').map(line => line.trim()).filter(Boolean);
+        console.log(chalk.green(`✅  Loaded ${secrets.length} accounts.`));
+        return secrets;
     } catch {
         console.log(chalk.red('❌  Error: Api3D.txt not found or empty.'));
         process.exit(1);
@@ -60,9 +63,9 @@ const getLocalSecretCode = () => {
 };
 
 // Send Ping API
-const sendPing = async (proxy) => {
+const sendPing = async (proxy, secret) => {
     const proxyAgent = getProxyAgent(proxy);
-    const url = 'https://api.dashboard.3dos.io/api/profile/api/805bf62f0a76433abacf';
+    const url = `https://api.dashboard.3dos.io/api/profile/api/${secret}`;
     try {
         const response = await axios.post(url, null, {
             headers: {
@@ -73,20 +76,19 @@ const sendPing = async (proxy) => {
             httpsAgent: proxyAgent,
         });
         if (response.data?.status === 'Success') {
-            console.log(chalk.green(`✅  Ping successful: Success`));
+            console.log(chalk.green(`✅  Ping successful for ${secret}: Success`));
         } else {
-            console.log(chalk.red('❌  Ping failed.')); 
+            console.log(chalk.red(`❌  Ping failed for ${secret}.`)); 
         }
     } catch (error) {
-        console.log(chalk.red(`❌  Ping error: ${error.message}`));
+        console.log(chalk.red(`❌  Ping error for ${secret}: ${error.message}`));
     }
 };
 
 // Refresh Points
-const refreshPoints = async (proxy) => {
+const refreshPoints = async (proxy, secret) => {
     const proxyAgent = getProxyAgent(proxy);
-    const localSecretCode = getLocalSecretCode();
-    const url = `https://api.dashboard.3dos.io/api/refresh-points/${localSecretCode}`;
+    const url = `https://api.dashboard.3dos.io/api/refresh-points/${secret}`;
     try {
         const response = await axios.get(url, {
             headers: {
@@ -95,12 +97,12 @@ const refreshPoints = async (proxy) => {
             httpsAgent: proxyAgent,
         });
         if (response.data?.data?.total_points !== undefined) {
-            console.log(chalk.green(`✅  Total Points: ${response.data.data.total_points}`));
+            console.log(chalk.green(`✅  Total Points for ${secret}: ${response.data.data.total_points}`));
         } else {
-            console.log(chalk.red('❌  Failed to retrieve total points.'));
+            console.log(chalk.red(`❌  Failed to retrieve total points for ${secret}.`));
         }
     } catch (error) {
-        console.log(chalk.red(`❌  Error refreshing points: ${error.message}`));
+        console.log(chalk.red(`❌  Error refreshing points for ${secret}: ${error.message}`));
     }
 };
 
@@ -120,16 +122,26 @@ const askProxyUsage = () => {
 const main = async () => {
     const useProxy = await askProxyUsage();
     const proxies = useProxy ? loadProxies() : [];
+    const secrets = getLocalSecretCodes();
     if (useProxy && proxies.length === 0) {
         console.log(chalk.red('❌  No proxies found. Exiting...'));
         process.exit(1);
     }
-    await refreshPoints(proxies[0]);
-    console.log(chalk.blue('🔄  Starting infinite ping loop... Press CTRL + C to stop.'));
+    
     let index = 0;
+    setInterval(async () => {
+        const proxy = proxies[index % proxies.length];
+        for (const secret of secrets) {
+            await refreshPoints(proxy, secret);
+        }
+        index++;
+    }, 60000);
+    
+    console.log(chalk.blue('🔄  Starting infinite ping loop... Press CTRL + C to stop.'));
     while (true) {
         const proxy = proxies[index % proxies.length];
-        await sendPing(proxy);
+        const secret = secrets[index % secrets.length];
+        await sendPing(proxy, secret);
         index++;
     }
 };
