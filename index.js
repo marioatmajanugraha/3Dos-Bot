@@ -60,7 +60,8 @@ const getLocalSecretCode = () => {
 };
 
 // Send Ping API
-const sendPing = async (proxyAgent) => {
+const sendPing = async (proxy) => {
+    const proxyAgent = getProxyAgent(proxy);
     const url = 'https://api.dashboard.3dos.io/api/profile/api/805bf62f0a76433abacf';
     try {
         const response = await axios.post(url, null, {
@@ -72,7 +73,7 @@ const sendPing = async (proxyAgent) => {
             httpsAgent: proxyAgent,
         });
         if (response.data?.status === 'Success') {
-            console.log(chalk.green(`✅  Ping successful: ${response.data.status}`));
+            console.log(chalk.green(`✅  Ping successful: Success`));
         } else {
             console.log(chalk.red('❌  Ping failed.')); 
         }
@@ -82,7 +83,8 @@ const sendPing = async (proxyAgent) => {
 };
 
 // Refresh Points
-const refreshPoints = async (proxyAgent) => {
+const refreshPoints = async (proxy) => {
+    const proxyAgent = getProxyAgent(proxy);
     const localSecretCode = getLocalSecretCode();
     const url = `https://api.dashboard.3dos.io/api/refresh-points/${localSecretCode}`;
     try {
@@ -118,13 +120,17 @@ const askProxyUsage = () => {
 const main = async () => {
     const useProxy = await askProxyUsage();
     const proxies = useProxy ? loadProxies() : [];
-    const proxy = proxies.length > 0 ? proxies[0] : null;
-    const proxyAgent = getProxyAgent(proxy);
-
-    await refreshPoints(proxyAgent);
+    if (useProxy && proxies.length === 0) {
+        console.log(chalk.red('❌  No proxies found. Exiting...'));
+        process.exit(1);
+    }
+    await refreshPoints(proxies[0]);
     console.log(chalk.blue('🔄  Starting infinite ping loop... Press CTRL + C to stop.'));
+    let index = 0;
     while (true) {
-        await sendPing(proxyAgent);
+        const proxy = proxies[index % proxies.length];
+        await sendPing(proxy);
+        index++;
     }
 };
 
