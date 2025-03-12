@@ -41,12 +41,9 @@ Delay otomatis antar request.
 Gunakan dengan bijak! Jangan sampai terkena limit IP.
 Developer tidak bertanggung jawab atas penyalahgunaan script ini.
 
-📢 
-Join Channel 
-& 
-Diskusi
+---
 
-Channel Telegram : 
-https://t.me/airdroplocked
-Grup Diskusi : 
-https://t.me/airdrop888backup
+## 📞 Kontak
+Jika ada pertanyaan, hubungi: [@balveerxyz](https://t.me/balveerxyz)
+
+Join channel Telegram: [Airdrop 888](https://t.me/airdroplocked)
